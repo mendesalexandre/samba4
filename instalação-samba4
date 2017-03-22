@@ -1,0 +1,416 @@
+#Instalando o Samba4 No CentOS 7 com bind9 
+yum update -y
+#Instalando o repositório epel
+
+yum install epel-release -y
+
+#Vamos começar desabilitando o SELINUX, firewalld e o iptables.
+
+#Desativando SELINUX e Firewall.
+#Abra o arquivo /etc/sysconfig/selinux e altere de
+#SELINUX=enforcing para #SELINUX=disabled.
+setenforce 0 && reboot
+
+#Verificar se realmente o SELINUX está desativado.
+sestatus
+
+#O próximo passo é desativar o iptables e o firewalld
+service firewalld stop
+service iptables stop
+service ip6tables stop
+systemctl disable firewalld
+systemctl disable iptables
+systemctl disable ip6tables
+
+#Precisamos habilitar alguns atributos no fstab para que ele de suporte a acl,user_xattr e barrier, 
+#em casos que vc tenha várias partições o ideal é que você faça a permissão diretamente na raiz para 
+#que futuramente não se tenha problemas em compartilhamentos .
+
+vim /etc/fstab
+
+UUID=c7228c8c-6209-401f-b63d-ea509f64e6f1 /                       ext4    defaults,acl,user_xattr,barrier=1        1 1
+
+#Remontando o sistema de arquivos
+
+mount -o remount /
+
+Dependências para podermos compilar o samba
+yum install perl gcc attr libacl-devel libblkid-devel \
+    gnutls-devel readline-devel python-devel gdb pkgconfig \
+    krb5-workstation zlib-devel setroubleshoot-server libaio-devel \
+    setroubleshoot-plugins policycoreutils-python \
+    libsemanage-python perl-ExtUtils-MakeMaker perl-Parse-Yapp \
+    perl-Test-Base popt-devel libxml2-devel libattr-devel \
+    keyutils-libs-devel cups-devel bind-utils libxslt bind bind-devel \
+    docbook-style-xsl openldap-devel autoconf python-crypto pam-devel wget 
+
+#(OPCIONAL): Pacotes adicionais para o melhor editarmos os arquivos.
+yum install vim -y 
+vim /etc/vimrc
+
+#Adicionar as linhas abaixo dentro do arquivo vimrc localizado em /etc/vimrc.
+set nu
+set bg=dark
+#Pronto, só salvar o arquivo e sair.
+:wq
+
+#Vamos baixar a versão mais recente do Samba no FTP deles até o momento desse tutorial.
+#Acesse:
+
+https://ftp.samba.org/pub/samba/stable/
+#Baixando, configurando e instalando o Samba
+cd /usr/src
+wget https://ftp.samba.org/pub/samba/stable/samba-4.4.5.tar.gz
+
+#Extraindo o arquivo baixado.
+tar -zxvf samba-4.4.5.tar.gz
+cd /usr/src/samba-4.4.5
+./configure --enable-debug --enable-selftest --with-systemd --enable-ntp-signd
+
+#Compilando e Instalando
+make && make install
+
+#Exportando a variável do Samba para dentro de /root/.bashrc
+echo "export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/bin/X11:/usr/local/samba/sbin:/usr/local/samba/bin" >> /root/.bashrc
+
+#Relendo o arquivo /root/.bashrc
+source /root/.bashrc
+
+#Vamos ajustar um arquivo muito importante para o AD(Samba) que é o resolv.conf
+
+vim /etc/resolv.conf
+domain convivencialinux.com.br #Dominio
+search convivencialinux.com.br #dominio a buscar
+nameserver 192.168.254.4 #IP do Samba4
+
+#Configurando o Bind9
+vim /etc/named.conf
+
+
+options {
+  listen-on port 53 { 127.0.0.1; 192.168.254.4/24; }; #IP do Localhost e IP do Samba4 na versão 4
+  listen-on-v6 port 53 { ::1; }; #Pode ficar comentada caso não use IPv6
+  directory   "/var/named";
+  dump-file   "/var/named/data/cache_dump.db";
+  statistics-file "/var/named/data/named_stats.txt";
+  memstatistics-file "/var/named/data/named_mem_stats.txt";
+  allow-query     { 192.168.254.0/24; localhost; }; #Permitir Consulta no DNS para a rede local
+  allow-recursion { 192.168.254.0/24; localhost; }; #Permitir recursividade apenas para a rede local
+  recursion yes;
+
+  dnssec-enable no;
+  dnssec-validation no;
+  #dnssec-lookaside auto;
+
+  /* Path to ISC DLV key */
+  bindkeys-file "/etc/named.iscdlv.key";
+
+  managed-keys-directory "/var/named/dynamic";
+
+ /* keytab para samba4 */
+  tkey-gssapi-keytab "/usr/local/samba/private/dns.keytab"; #Keytab do kerberos do samba4
+
+};
+
+logging {
+  channel default_debug {
+          file "data/named.run";
+          severity dynamic;
+  };
+};
+
+zone "." IN {
+  type hint;
+  file "named.ca";
+};
+
+include "/etc/named.rfc1912.zones";
+include "/etc/named.root.key";
+/*Arquivo de configuração do samba4 que informa a localização do bind_dlz */
+include "/usr/local/samba/private/named.conf";
+
+
+#Configuração do Kerberos
+#Vamos fazer backup do arquivo de configuração
+mv /etc/krb5.conf /etc/krb5.conf.old
+#Vamos criar um link para o sistema reconhecer o arquivo de configuração do samba como default
+cp -Rfa /usr/local/samba/private/krb5.conf /etc/krb5.conf
+
+vim /etc/krb5.conf
+##########################################################
+[logging]
+     default = FILE:/var/log/krb5libs.log
+     kdc = FILE:/var/log/krb5kdc.log
+     admin_server = FILE:/var/log/kadmind.log
+
+[libdefaults]
+     default_realm = LABORATORIO.LOCAL
+     dns_lookup_realm = true
+     dns_lookup_kdc = true
+     ticket_lifetime = 24h
+     forwardable = yes
+
+[appdefaults]
+     pam = {
+          debug = false
+          ticket_lifetime = 36000
+          renew_lifetime = 36000
+          forwardable = true
+          krb4_convert = false
+     }
+##########################################################
+chown root:named /etc/krb5.conf
+chmod 640 /usr/local/samba/private/dns.keytab
+chown root:named /usr/local/samba/private/dns.keytab
+
+# ls -l /etc/krb5.conf
+-rw-r--r--. 1 root named 99  2. jan 2017  /etc/krb5.conf
+
+
+#Agora vamos provisionar o nosso domínio
+#Para saber quais opções podem ser utilizadas podemos listar da seguinte forma
+samba-tool domain provision -h
+
+#Provisionando nosso domínio
+samba-tool domain provision --domain=CONVIVENCIALINUX --adminpass=dominio@samba4 \
+--dns-backend=BIND9_DLZ --server-role=dc \
+--function-level=2008_R2 --use-xattr=yes \
+--use-rfc2307 --realm=convivencialinux.com.br
+
+#Se tudo ocorrer bem a saída do comando acima deve ser como a abaixo.
+
+Looking up IPv4 addresses
+Looking up IPv6 addresses
+No IPv6 address will be assigned
+Setting up share.ldb
+Setting up secrets.ldb
+Setting up the registry
+Setting up the privileges database
+Setting up idmap db
+Setting up SAM db
+Setting up sam.ldb partitions and settings
+Setting up sam.ldb rootDSE
+Pre-loading the Samba 4 and AD schema
+Adding DomainDN: DC=convivencialinux,DC=com,DC=br
+Adding configuration container
+Setting up sam.ldb schema
+Setting up sam.ldb configuration data
+Setting up display specifiers
+Modifying display specifiers
+Adding users container
+Modifying users container
+Adding computers container
+Modifying computers container
+Setting up sam.ldb data
+Setting up well known security principals
+Setting up sam.ldb users and groups
+Setting up self join
+Adding DNS accounts
+Creating CN=MicrosoftDNS,CN=System,DC=convivencialinux,DC=com,DC=br
+Creating DomainDnsZones and ForestDnsZones partitions
+Populating DomainDnsZones and ForestDnsZones partitions
+See /usr/local/samba/private/named.conf for an example configuration include file for BIND
+and /usr/local/samba/private/named.txt for further documentation required for secure DNS updates
+Setting up sam.ldb rootDSE marking as synchronized
+Fixing provision GUIDs
+A Kerberos configuration suitable for Samba 4 has been generated at /usr/local/samba/private/krb5.conf
+Setting up fake yp server settings
+Once the above files are installed, your Samba4 server will be ready to use
+Server Role:           active directory domain controller
+Hostname:              samba4
+NetBIOS Domain:        CONVIVENCIA
+DNS Domain:            convivencialinux.com.br
+DOMAIN SID:            S-1-5-21-2016965809-1847694634-1467046014
+
+
+
+#Se por algum motivo precisar provisionar novamente o dominio remove os arquivos abaixos
+rm -rf /usr/local/samba/etc
+rm -rf /usr/local/samba/private
+rm -rf /usr/local/samba/var/locks/sysvol
+
+#Colocando o Bind9 na para inicializar junto ao sistema.
+systemctl enable named
+systemctl enable samba
+
+#Adicionando o samba no systemd
+#criando um samba.service adicionando o arquivo em /etc/systemd/system/samba.service
+vim /etc/systemd/system/samba.service
+[Unit]
+Description= Samba 4 Active Directory
+After=syslog.target
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/usr/local/samba/var/run/samba.pid
+ExecStart=/usr/local/samba/sbin/samba
+
+[Install]
+WantedBy=multi-user.target
+
+#Vamos parar nossos serviços
+systemctl stop samba
+systemctl stop named
+
+#Vamos iniciar nossos serviços
+systemctl start samba 
+systemctl start named
+
+#Verificando se os serviços do samba estão rodando corretamente.
+netstat -putan | grep samba
+
+
+#Vamos criar o diretório para armazenar os logs
+mkdir -p /var/log/samba
+
+#Precisamos ajustar as bibliotecas do winbind para os sistemas de 32bits precisamos fazer da seguinte forma
+ln -s /usr/local/samba/lib/libnss_winbind.so /lib
+ln -s /lib/libnss_winbind.so /lib/libnss_winbind.so.2
+ldconfig
+
+#Para os sistemas de 64bits precisamos fazer da seguinte forma
+ln -s /usr/local/samba/lib/libnss_winbind.so /lib64
+ln -s /lib64/libnss_winbind.so /lib64/libnss_winbind.so.2
+ldconfig
+
+#Vamos ajustar o nsswitch.conf
+
+vim /etc/nsswitch.conf
+[...]
+passwd: files winbind
+[...]
+group:  files winbind
+
+#Agora vamos inicializar um ticket para o administrator
+kinit administrator
+Password for administrator@LABORATORIO.LOCAL
+
+#Agora vamos listar o nosso ticket
+klist
+#O nosso kerberos está ok.
+
+
+#Configurando o NTP
+#Vamos instalar o ntp
+yum install ntp -y
+
+#Agora vamos fazer um backup do arquivo de configuração default do ntp.conf
+mv /etc/ntp.conf /etc/ntp.conf.old
+
+#Agora vamos configurar o ntp
+
+vim /etc/ntp.conf
+#############################################################################
+server 127.127.1.0
+fudge  127.127.1.0 stratum 10
+server a.ntp.br iburst prefer
+server 0.pool.ntp.org  iburst prefer
+server 1.pool.ntp.org  iburst prefer
+driftfile /var/lib/ntp/ntp.drift
+logfile /var/log/ntp
+ntpsigndsocket /usr/local/samba/var/lib/ntp_signd/
+restrict default kod nomodify notrap nopeer mssntp
+restrict 127.0.0.1
+restrict a.ntp.br mask 255.255.255.255 nomodify notrap nopeer noquery
+restrict 0.pool.ntp.org mask 255.255.255.255 nomodify notrap nopeer noquery
+restrict 1.pool.ntp.org mask 255.255.255.255 nomodify notrap nopeer noquery
+#############################################################################
+
+
+#Iniciando o Daemon
+systemctl enable ntpd
+systemctl start ntpd
+
+#Agora vamos consultar o seu sincronismo
+
+ntpq -p 127.0.0.1
+     remote           refid      st t when poll reach   delay   offset  jitter
+==============================================================================
+ LOCAL(0)        .LOCL.          10 l    -   64    1    0.000    0.000   0.000
+ a.ntp.br        .INIT.          16 u    -   64    0    0.000    0.000   0.000
+ a.st1.ntp.br    .INIT.          16 u    -   64    0    0.000    0.000   0.000
+ roma.coe.ufrj.b .INIT.          16 u    -   64    0    0.000    0.000   0.000
+ 
+ 
+
+ 
+#Atualizar o nosso ntp
+ntpdate -u a.ntp.br
+
+#Agora vamos ajustar o grupo do arquivo ntp_signd
+chgrp ntp /usr/local/samba/var/lib/ntp_signd
+
+#Agora vamos testar o winbind
+wbinfo -t 
+
+#Verificando usuarios 
+wbinfo -u
+
+#Verificando os grupos
+wbingo -g
+
+#Agora vamos testar o update de dns no samba
+samba_dnsupdate --verbose
+
+#Agora vamos mandar atualizar todos os registros
+samba_dnsupdate --verbose --all-names
+
+#Desabilitar a expiração de senha do administrator
+samba-tool user setexpiry administrator --noexpiry
+Expiry for user 'administrator' disabled.
+
+#Ou se voce preferir pode definir quantos dias o senha do administrador expirará no samba 4.
+samba-tool user setexpiry --days=20 Administrator
+
+
+#Verificar as configurações de politicas de senha
+samba-tool domain passwordsettings show
+ 
+#Desabilitar o histórico de senha no samba 4.
+samba-tool domain passwordsettings set --history-length=0
+
+#Desabiitar idade minima de senha.
+samba-tool domain passwordsettings set --min-pwd-age=0
+ 
+#Desabilitar idade maxima da senha no samba 4 .
+samba-tool domain passwordsettings set --max-pwd-age=0
+
+#Desabilitar tamanho mínimo da senha no samba 4 .
+samba-tool domain passwordsettings set --min-pwd-length=0
+
+#Desabilitar tudo de uma vez só
+samba-tool domain passwordsettings set --complexity=off --history-length=0 --min-pwd-length=0 --min-pwd-age=0
+
+#Verificando a versão do samba
+smbclient --version
+Version 4.4.5
+
+#Comando que verifica quais arquivos estão sendo acessados.
+smbstatus
+
+
+#Verificando os compartilhamentos ativo no servidor samba
+smbclient -L localhost -U%
+
+#Vamos testar as entradas SRV no DNS
+
+host -t SRV _ldap._tcp.laboratorio.local.
+_ldap._tcp.laboratorio.local has SRV record 0 100 389 samba.laboratorio.local.
+
+host -t SRV _kerberos._udp.laboratorio.local.
+_kerberos._udp.laboratorio.local has SRV record 0 100 88 samba.laboratorio.local.
+
+host -t A samba.laboratorio.local
+samba.laboratorio.local has address 192.168.254.4
+
+
+
+#Agora vamos inserir o nosso servidor como bdc
+#Agora vamos provisionar o nosso domínio
+samba-tool domain join laboratorio.local DC -U administrator --realm=laboratorio.local --dns-backend=BIND9_DLZ
+
+
+#OBS: Se tiver alguma falha seguir o seguinte link: 
+https://wiki.samba.org/index.php/Dns_tkey_negotiategss:_TKEY_is_unacceptable
+https://wiki.samba.org/index.php/BIND9_DLZ_DNS_Back_End
