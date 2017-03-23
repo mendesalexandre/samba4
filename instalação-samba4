@@ -395,10 +395,9 @@ _kerberos._udp.convivencialinux.com.br has SRV record 0 100 88 samba.convivencia
 host -t A samba.laboratorio.local
 samba.convivencialinux.com.br has address 192.168.254.4
 
-Agora vamos inserir o nosso servidor como bdc
-Agora vamos provisionar o nosso domínio
-samba-tool domain join convivencialinux.com.br DC -U administrator --realm=convivencialinux.com.br --dns-backend=BIND9_DLZ
+Verificando as portas abertas no samba
+ netstat -putan | grep samba
 
-#OBS: Se tiver alguma falha seguir o seguinte link: 
-https://wiki.samba.org/index.php/Dns_tkey_negotiategss:_TKEY_is_unacceptable
-https://wiki.samba.org/index.php/BIND9_DLZ_DNS_Back_End
+Verificando o processo do samba aberto
+ps auxwww | grep samba
+
