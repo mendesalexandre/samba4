@@ -1,1 +1,1 @@
-#Repositório de instalação do samba4
+Documentação para instalação do samba4 como AD
