@@ -314,7 +314,6 @@ restrict 0.pool.ntp.org mask 255.255.255.255 nomodify notrap nopeer noquery
 restrict 1.pool.ntp.org mask 255.255.255.255 nomodify notrap nopeer noquery
 #############################################################################
 
-
 Iniciando o Daemon do NTP
 systemctl enable ntpd
 systemctl start ntpd
@@ -331,6 +330,43 @@ ntpq -p 127.0.0.1
  
 Atualizar o nosso ntp
 ntpdate -u a.ntp.br
+
+NOTA: Um cuidado que temos que tomar é referente a timezone do servidor, pra quem mora em um estado na qual não é o mesmo 
+horario de Brasília deve ficar atento. 
+
+Para verificar o tempo e hora usamos o comando: 
+date
+
+Para verificar a zona de tempo atual do seu servidor
+timedatectl
+[root@master fulano]# timedatectl
+      Local time: Sex 2017-03-24 15:07:39 -04
+  Universal time: Sex 2017-03-24 19:07:39 UTC
+        RTC time: Sex 2017-03-24 19:07:35
+       Time zone: America/Cuiaba (-04, -0400)
+     NTP enabled: yes
+NTP synchronized: no
+ RTC in local TZ: no
+      DST active: no
+ Last DST change: DST ended at
+                  Sáb 2017-02-18 23:59:59 -03
+                  Sáb 2017-02-18 23:00:00 -04
+ Next DST change: DST begins (the clock jumps one hour forward) at
+                  Sáb 2017-10-14 23:59:59 -04
+                  Dom 2017-10-15 01:00:00 -03
+
+
+
+Listar as timezones disponiveis. 
+timedatectl list-timezones
+
+Filtrando as timezones de acordo com seu continente
+timedatectl list-timezones | grep America/Cuiaba
+[root@master fulano]# timedatectl list-timezones | grep America/Cuiaba
+America/Cuiaba
+
+E por fim, caso necessário, alterando a timezone 
+timedatectl set-timezone America/Cuiaba
 
 Agora vamos ajustar o grupo do arquivo ntp_signd
 chgrp ntp /usr/local/samba/var/lib/ntp_signd
