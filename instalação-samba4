@@ -230,7 +230,6 @@ rm -rf /usr/local/samba/var/locks/sysvol
 
 Colocando o Bind9 na para inicializar junto ao sistema.
 systemctl enable named
-systemctl enable samba
 
 Adicionando o samba no systemd
 Criando um samba.service adicionando o arquivo em /etc/systemd/system/samba.service
@@ -248,13 +247,15 @@ ExecStart=/usr/local/samba/sbin/samba
 [Install]
 WantedBy=multi-user.target
 
-Vamos parar nossos serviços
-systemctl stop samba
+Vamos parar o DNS
 systemctl stop named
 
 Vamos iniciar nossos serviços
-systemctl start samba 
+systemctl start samba
 systemctl start named
+
+Inserindo o script do samba para ser iniciado automaticamente
+systemctl enable samba
 
 Verificando se os serviços do samba estão rodando corretamente.
 netstat -putan | grep samba
