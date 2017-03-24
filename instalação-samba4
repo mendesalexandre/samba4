@@ -64,7 +64,7 @@ Extraindo o arquivo baixado.
 tar -zxvf samba-4.4.5.tar.gz
 cd /usr/src/samba-4.4.5
 Configurando com as opções que queremos em nosso servidor
-./configure --enable-debug --enable-selftest --with-systemd --enable-ntp-signd
+./configure --enable-debug --enable-selftest --with-systemd
 
 Compilando e Instalando
 make && make install
