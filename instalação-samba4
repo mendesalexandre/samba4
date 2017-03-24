@@ -128,43 +128,6 @@ include "/etc/named.root.key";
 include "/usr/local/samba/private/named.conf";
 #---------------------------------------------------------------------------------------------
 
-Configuração do Kerberos
-Vamos fazer backup do arquivo de configuração
-mv /etc/krb5.conf /etc/krb5.conf.old
-Vamos criar um link para o sistema reconhecer o arquivo de configuração do samba como default
-cp -Rfa /usr/local/samba/private/krb5.conf /etc/krb5.conf
-
-vim /etc/krb5.conf
-##################################################################################
-[logging]
-     default = FILE:/var/log/krb5libs.log
-     kdc = FILE:/var/log/krb5kdc.log
-     admin_server = FILE:/var/log/kadmind.log
-
-[libdefaults]
-     default_realm = LABORATORIO.LOCAL
-     dns_lookup_realm = true
-     dns_lookup_kdc = true
-     ticket_lifetime = 24h
-     forwardable = yes
-
-[appdefaults]
-     pam = {
-          debug = false
-          ticket_lifetime = 36000
-          renew_lifetime = 36000
-          forwardable = true
-          krb4_convert = false
-     }
-#####################################################################################
-Ajustando as permissões do arquivos do Kerberbos e DNS do Samba
-chown root:named /etc/krb5.conf
-chmod 640 /usr/local/samba/private/dns.keytab
-chown root:named /usr/local/samba/private/dns.keytab
-
-ls -l /etc/krb5.conf
--rw-r--r--. 1 root named 99  2. jan 2017  /etc/krb5.conf
-
 
 Agora vamos provisionar o nosso domínio
 Para saber quais opções podem ser utilizadas podemos listar da seguinte forma
@@ -220,8 +183,45 @@ Hostname:              samba4
 NetBIOS Domain:        CONVIVENCIA
 DNS Domain:            convivencialinux.com.br
 DOMAIN SID:            S-1-5-21-2016965809-1847694634-1467046014
+#--------------------------------------------------------------
 
+Configuração do Kerberos
+Vamos fazer backup do arquivo de configuração
+mv /etc/krb5.conf /etc/krb5.conf.old
+Vamos criar um link para o sistema reconhecer o arquivo de configuração do samba como default
+cp -Rfa /usr/local/samba/private/krb5.conf /etc/krb5.conf
 
+vim /etc/krb5.conf
+##################################################################################
+[logging]
+     default = FILE:/var/log/krb5libs.log
+     kdc = FILE:/var/log/krb5kdc.log
+     admin_server = FILE:/var/log/kadmind.log
+
+[libdefaults]
+     default_realm = LABORATORIO.LOCAL
+     dns_lookup_realm = true
+     dns_lookup_kdc = true
+     ticket_lifetime = 24h
+     forwardable = yes
+
+[appdefaults]
+     pam = {
+          debug = false
+          ticket_lifetime = 36000
+          renew_lifetime = 36000
+          forwardable = true
+          krb4_convert = false
+     }
+#####################################################################################
+
+chown root:named /etc/krb5.conf
+chmod 640 /usr/local/samba/private/dns.keytab
+chown root:named /usr/local/samba/private/dns.keytab
+ln -s /usr/local/samba/private/dns.keytab /etc/krb5.keytab
+
+# ls -l /etc/krb5.conf
+-rw-r--r--. 1 root named 99  2. jan 2017  /etc/krb5.conf
 
 Se por algum motivo precisar provisionar novamente o dominio remova os arquivos abaixos
 rm -rf /usr/local/samba/etc
