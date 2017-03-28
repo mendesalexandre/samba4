@@ -28,6 +28,9 @@ que futuramente não se tenha problemas em compartilhamentos .
 vim /etc/fstab
 UUID=c7228c8c-6209-401f-b63d-ea509f64e6f1 /                       ext4    defaults,acl,user_xattr,barrier=1        1 1
 
+OBS: Se você usa ext4 como sistema de arquivos não precisar editar o fstab, acl já vem por padrão.
+Mais informações no link: https://wiki.samba.org/index.php/File_System_Support
+
 Remontando o sistema de arquivos
 mount -o remount /
 
