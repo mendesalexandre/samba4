@@ -1,0 +1,88 @@
+Quando estamos comecando a usar o Samba como servidor de Arquivos/Domínio podemos não especificar o nível funcional 
+que queremos que nossa floresta funcione.
+Vamos aprender a elevar o nível funcional do domínio e da floresta no samba 4.
+
+Vamos listar o nível funcional atual do nosso domínio samba
+
+samba-tool domain level show
+Domain and forest function level for domain 'DC=laboratorio,DC=local'
+
+Forest function level: (Windows) 2003
+Domain function level: (Windows) 2003
+Lowest function level of a DC: (Windows) 2008 R2
+Aqui podemos ver que o nível funcional do domínio e da floresta é 2003, vamos modificar isso.
+
+Vamos listar as opções do domain level
+
+samba-tool domain level -h
+Usage: samba-tool domain level (show|raise <options>) [options]
+
+Raise domain and forest function levels.
+
+
+Options:
+  -h, --help            show this help message and exit
+  -H URL, --URL=URL     LDB URL for database or target server
+  --quiet               Be quiet
+  --forest-level=FOREST_LEVEL
+                        The forest function level (2003 | 2008 | 2008_R2)
+  --domain-level=DOMAIN_LEVEL
+                        The domain function level (2003 | 2008 | 2008_R2)
+
+  Samba Common Options:
+    -s FILE, --configfile=FILE
+                        Configuration file
+    -d DEBUGLEVEL, --debuglevel=DEBUGLEVEL
+                        debug level
+    --option=OPTION     set smb.conf option from command line
+    --realm=REALM       set the realm name
+
+  Credentials Options:
+    --simple-bind-dn=DN
+                        DN to use for a simple bind
+    --password=PASSWORD
+                        Password
+    -U USERNAME, --username=USERNAME
+                        Username
+    -W WORKGROUP, --workgroup=WORKGROUP
+                        Workgroup
+    -N, --no-pass       Dont ask for a password
+    -k KERBEROS, --kerberos=KERBEROS
+                        Use Kerberos
+    --ipaddress=IPADDRESS
+                        IP address of server
+
+  Version Options:
+    -V, --version       Display version number
+Aqui podemos notar que temos a opção de modificar o nível funcional:
+
+The forest function level (2003 | 2008 | 2008_R2)
+The domain function level (2003 | 2008 | 2008_R2)
+Então vamos deixar os níveis funcionais como 2008_R2
+
+Primeiro vamos alterar o nível funcional do domínio
+
+samba-tool domain level raise --domain-level=2008_R2
+Domain function level changed!
+All changes applied successfully!
+
+Agora vamos alterar o nível funcional da floresta
+samba-tool domain level raise --forest-level=2008_R2
+Forest function level changed!
+All changes applied successfully!
+
+Ainda podemos alterar tudo de uma vez 
+nível funcional e floresta
+
+samba-tool domain level raise --domain-level=2008_R2 --forest-level=2008_R2
+
+
+Agora vamos listar o nosso nível funcionar
+samba-tool domain level show
+Domain and forest function level for domain 'DC=laboratorio,DC=local'
+
+Forest function level: (Windows) 2008 R2
+Domain function level: (Windows) 2008 R2
+Lowest function level of a DC: (Windows) 2008 R2
+
+Agora podemos notar que o nosso nível funcional tanto do domínio quanto da floresta é 2008 R2.
