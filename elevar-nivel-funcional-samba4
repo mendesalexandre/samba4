@@ -1,6 +1,4 @@
-Quando estamos comecando a usar o Samba como servidor de Arquivos/Domínio podemos não especificar o nível funcional 
-que queremos que nossa floresta funcione.
-Vamos aprender a elevar o nível funcional do domínio e da floresta no samba 4.
+Quando vamos provisionar nosso Servidor de Arquivos usando Samba4, podemos não especificar qual nivel funcional do dominio/floresta usar por padrão usaríamos a 2003, porém para ter melhor proveito em nosso servidor vamos elevar para a versão que o Samba suporte até o momento a versão 47 que suporta somente até o Server 2008 R2.
 
 Vamos listar o nível funcional atual do nosso domínio samba
 
