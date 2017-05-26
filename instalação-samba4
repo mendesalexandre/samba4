@@ -342,8 +342,8 @@ ntpsigndsocket /usr/local/samba/var/lib/ntp_signd/
 restrict default kod nomodify notrap nopeer mssntp
 restrict 127.0.0.1
 restrict a.ntp.br mask 255.255.255.255 nomodify notrap nopeer noquery
-restrict 0.pool.ntp.org mask 255.255.255.255 nomodify notrap nopeer noquery
-restrict 1.pool.ntp.org mask 255.255.255.255 nomodify notrap nopeer noquery
+restrict b.ntp.br mask 255.255.255.255 nomodify notrap nopeer noquery
+restrict c.ntp.br mask 255.255.255.255 nomodify notrap nopeer noquery
 #############################################################################
 
 Iniciando o Daemon do NTP
