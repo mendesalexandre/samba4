@@ -188,6 +188,35 @@ DNS Domain:            convivencialinux.com.br
 DOMAIN SID:            S-1-5-21-2016965809-1847694634-1467046014
 #--------------------------------------------------------------
 
+Se por acaso tiver algum erro em provisionar o domínio.
+
+ERROR(ldb): uncaught exception - operations error at ../source4/dsdb/samdb/ldb_modules/password_hash.c:2816
+File "/usr/lib64/python2.7/site-packages/samba/netcmd/__init__.py", line 176, in _run
+return self.run(*args, **kwargs)
+File "/usr/lib64/python2.7/site-packages/samba/netcmd/domain.py", line 462, in run
+nosync=ldap_backend_nosync, ldap_dryrun_mode=ldap_dryrun_mode)
+File "/usr/lib64/python2.7/site-packages/samba/provision/__init__.py", line 2175, in provision
+skip_sysvolacl=skip_sysvolacl)
+File "/usr/lib64/python2.7/site-packages/samba/provision/__init__.py", line 1787, in provision_fill
+next_rid=next_rid, dc_rid=dc_rid)
+File "/usr/lib64/python2.7/site-packages/samba/provision/__init__.py", line 1447, in fill_samdb
+"KRBTGTPASS_B64": b64encode(krbtgtpass.encode('utf-16-le'))
+File "/usr/lib64/python2.7/site-packages/samba/provision/common.py", line 55, in setup_add_ldif
+ldb.add_ldif(data, controls)
+File "/usr/lib64/python2.7/site-packages/samba/__init__.py", line 225, in add_ldif
+self.add(msg, controls)
+
+
+Basta apenas remover o arquivo do kerberos e tentar novamente
+rm -rf /etc/krb5.conf
+ln -sf /usr/local/samba/private/krb5.conf /etc/krb5.conf
+
+Tentando provisionar o domínio mais uma vez (somente em caso do erro acima)
+samba-tool domain provision --domain=CONVIVENCIALINUX --adminpass=dominio@samba4 \
+--dns-backend=BIND9_DLZ --server-role=dc \
+--function-level=2008_R2 --use-xattr=yes \
+--use-rfc2307 --realm=convivencialinux.com.br
+
 Configuração do Kerberos
 Vamos fazer backup do arquivo de configuração
 mv /etc/krb5.conf /etc/krb5.conf.old
