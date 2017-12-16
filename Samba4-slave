@@ -1,0 +1,150 @@
+A partir de agora vamos tratar a parte de replicação do samba4. 
+Grandes ambientes não podem parar para isso ter algum ambiente de replicação é muito importante. 
+
+
+E hj vamos configurar um samba como secundário para caso o master pare, ele mantenha o ambiente funcionando. 
+
+
+Instalando o Samba4 No CentOS 7 com bind9 
+yum update -y
+
+Instalando o repositório epel
+yum install epel-release -y
+
+Vamos começar desabilitando o SELINUX, firewalld e o iptables.
+
+Desativando SELINUX e Firewall.
+Abra o arquivo /etc/sysconfig/selinux e altere de SELINUX=enforcing para #SELINUX=disabled.
+setenforce 0 && reboot
+
+Verificar se realmente o SELINUX está desativado.
+sestatus
+
+O próximo passo é desativar o iptables e o firewalld
+service firewalld stop
+service iptables stop
+service ip6tables stop
+systemctl disable firewalld
+systemctl disable iptables
+systemctl disable ip6tables
+
+Precisamos habilitar alguns atributos no fstab para que ele de suporte a acl,user_xattr e barrier, 
+em casos que vc tenha várias partições o ideal é que você faça a permissão diretamente na raiz para 
+que futuramente não se tenha problemas em compartilhamentos .
+
+vim /etc/fstab
+UUID=c7228c8c-6209-401f-b63d-ea509f64e6f1 /                       ext4    defaults,acl,user_xattr,barrier=1        1 1
+
+OBS: Se você usa ext4 como sistema de arquivos não precisar editar o fstab, acl já vem por padrão.
+Mais informações no link: https://wiki.samba.org/index.php/File_System_Support
+
+Remontando o sistema de arquivos
+mount -o remount /
+
+Dependências para podermos compilar o samba
+yum install perl gcc attr libacl-devel libblkid-devel \
+    gnutls-devel readline-devel python-devel gdb pkgconfig \
+    krb5-workstation zlib-devel setroubleshoot-server libaio-devel \
+    setroubleshoot-plugins policycoreutils-python \
+    libsemanage-python perl-ExtUtils-MakeMaker perl-Parse-Yapp \
+    perl-Test-Base popt-devel libxml2-devel libattr-devel \
+    keyutils-libs-devel cups-devel bind-utils libxslt bind bind-devel \
+    docbook-style-xsl openldap-devel autoconf python-crypto pam-devel wget 
+
+(OPCIONAL): Pacotes adicionais para o melhor editarmos os arquivos.
+yum install vim -y 
+vim /etc/vimrc
+
+Adicionar as linhas abaixo dentro do arquivo vimrc localizado em /etc/vimrc.
+set nu
+set bg=dark
+
+Pronto, só salvar o arquivo e sair.
+:wq
+
+Vamos baixar a versão mais recente do Samba no FTP deles até o momento desse tutorial.
+Acesse:
+https://ftp.samba.org/pub/samba/stable/
+
+Baixando, configurando e instalando o Samba
+cd /usr/src
+wget https://ftp.samba.org/pub/samba/stable/samba-4.4.5.tar.gz
+
+Extraindo o arquivo baixado.
+tar -zxvf samba-4.4.5.tar.gz
+cd /usr/src/samba-4.4.5
+Configurando com as opções que queremos em nosso servidor
+./configure --enable-debug --enable-selftest --with-systemd
+
+Compilando e Instalando
+make && make install
+
+Exportando a variável do Samba para dentro de /root/.bashrc
+echo "export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/bin/X11:/usr/local/samba/sbin:/usr/local/samba/bin" >> /root/.bashrc
+
+Relendo o arquivo /root/.bashrc
+source /root/.bashrc
+
+Vamos ajustar um arquivo muito importante para o AD(Samba) que é o resolv.conf
+vim /etc/resolv.conf
+domain convivencialinux.com.br #Dominio
+search convivencialinux.com.br #dominio a buscar
+nameserver 192.168.254.4 #IP do Samba4
+
+Configurando o Bind9
+vim /etc/named.conf
+
+#-------------------------------------------------------------------------------------------------
+options {
+  listen-on port 53 { 127.0.0.1; 192.168.254.4/24; }; #IP do Localhost e IP do Samba4 na versão 4
+  listen-on-v6 port 53 { ::1; }; #Pode ficar comentada caso não use IPv6
+  directory   "/var/named";
+  dump-file   "/var/named/data/cache_dump.db";
+  statistics-file "/var/named/data/named_stats.txt";
+  memstatistics-file "/var/named/data/named_mem_stats.txt";
+  allow-query     { 192.168.254.0/24; localhost; }; #Permitir Consulta no DNS para a rede local
+  allow-recursion { 192.168.254.0/24; localhost; }; #Permitir recursividade apenas para a rede local
+  recursion yes;
+
+  dnssec-enable no;
+  dnssec-validation no;
+  #dnssec-lookaside auto;
+
+  /* Path to ISC DLV key */
+  bindkeys-file "/etc/named.iscdlv.key";
+
+  managed-keys-directory "/var/named/dynamic";
+
+ /* keytab para samba4 */
+  tkey-gssapi-keytab "/usr/local/samba/private/dns.keytab"; #Keytab do kerberos do samba4
+
+};
+
+logging {
+  channel default_debug {
+          file "data/named.run";
+          severity dynamic;
+  };
+};
+
+zone "." IN {
+  type hint;
+  file "named.ca";
+};
+
+include "/etc/named.rfc1912.zones";
+include "/etc/named.root.key";
+/*Arquivo de configuração do samba4 que informa a localização do bind_dlz */
+include "/usr/local/samba/private/named.conf";
+#---------------------------------------------------------------------------------------------
+
+
+Agora vamos provisionar o nosso domínio
+Para saber quais opções podem ser utilizadas podemos listar da seguinte forma
+samba-tool domain provision -h
+
+Provisionando nosso domínio
+samba-tool domain provision --domain=CONVIVENCIALINUX --adminpass=dominio@samba4 \
+--dns-backend=BIND9_DLZ --server-role=dc \
+--function-level=2008_R2 --use-xattr=yes \
+--use-rfc2307 --realm=convivencialinux.com.br
