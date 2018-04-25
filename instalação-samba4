@@ -128,7 +128,8 @@ zone "." IN {
 include "/etc/named.rfc1912.zones";
 include "/etc/named.root.key";
 /*Arquivo de configuração do samba4 que informa a localização do bind_dlz */
-include "/usr/local/samba/private/named.conf";
+include "/usr/local/samba/private/named.conf"; # se vc usa uma versão menor que a 4.8 usar essa linha
+#include "/usr/local/samba/bind-dns/named.conf"; # se vc usa uma versão igual ou maior que 4.8 comente a linha acima e descomente essa.
 #---------------------------------------------------------------------------------------------
 
 
