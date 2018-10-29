@@ -35,7 +35,7 @@ Remontando o sistema de arquivos
 mount -o remount /
 
 Dependências para podermos compilar o samba
-yum install perl gcc attr libacl-devel libblkid-devel \
+yum install perl gcc attr libacl-devel libblkid-devel libjansson-dev jansson-devel \
     gnutls-devel readline-devel python-devel gdb pkgconfig \
     krb5-workstation zlib-devel setroubleshoot-server libaio-devel \
     setroubleshoot-plugins policycoreutils-python \
