@@ -40,7 +40,7 @@ yum install perl gcc attr libacl-devel libblkid-devel \
     krb5-workstation zlib-devel setroubleshoot-server libaio-devel \
     setroubleshoot-plugins policycoreutils-python \
     libsemanage-python perl-ExtUtils-MakeMaker perl-Parse-Yapp \
-    perl-Test-Base popt-devel libxml2-devel libattr-devel \
+    perl-Test-Base popt-devel libxml2-devel libattr-devel lmdb-devel \
     keyutils-libs-devel cups-devel bind-utils libxslt bind bind-devel \
     docbook-style-xsl openldap-devel autoconf python-crypto pam-devel lmdb wget 
 
