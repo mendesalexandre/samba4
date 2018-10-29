@@ -42,7 +42,7 @@ yum install perl gcc attr libacl-devel libblkid-devel \
     libsemanage-python perl-ExtUtils-MakeMaker perl-Parse-Yapp \
     perl-Test-Base popt-devel libxml2-devel libattr-devel \
     keyutils-libs-devel cups-devel bind-utils libxslt bind bind-devel \
-    docbook-style-xsl openldap-devel autoconf python-crypto pam-devel wget 
+    docbook-style-xsl openldap-devel autoconf python-crypto pam-devel lmdb wget 
 
 (OPCIONAL): Pacotes adicionais para o melhor editarmos os arquivos.
 yum install vim -y 
