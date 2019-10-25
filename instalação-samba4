@@ -39,6 +39,10 @@ yum install python3 python36-devel  -y
 #PASSO PARA QUEM USA BIND COMO RESOLVEDOR
 yum install python-dns -y
 
+git clone https://github.com/rthalley/dnspython
+cd dnspython\
+python3 setup.py install
+
 
 (OPCIONAL): Pacotes adicionais para o melhor editarmos os arquivos.
 yum install vim -y 
