@@ -32,6 +32,10 @@ yum install perl gcc attr libacl-devel libblkid-devel libjansson-dev jansson-dev
     keyutils-libs-devel cups-devel bind-utils libxslt bind bind-devel \
     docbook-style-xsl openldap-devel autoconf python-crypto pam-devel lmdb wget 
 
+
+# PASSO EXTRA SE SUA VERSÃO FOR MAIOR QUE A 4.10.X
+yum install python3 python36-devel  -y
+
 (OPCIONAL): Pacotes adicionais para o melhor editarmos os arquivos.
 yum install vim -y 
 vim /etc/vimrc
