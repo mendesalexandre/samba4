@@ -36,6 +36,10 @@ yum install perl gcc attr libacl-devel libblkid-devel libjansson-dev jansson-dev
 # PASSO EXTRA SE SUA VERSÃO FOR MAIOR QUE A 4.10.X
 yum install python3 python36-devel  -y
 
+#PASSO PARA QUEM USA BIND COMO RESOLVEDOR
+yum install python-dns -y
+
+
 (OPCIONAL): Pacotes adicionais para o melhor editarmos os arquivos.
 yum install vim -y 
 vim /etc/vimrc
