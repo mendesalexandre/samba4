@@ -109,5 +109,26 @@ ExecStart=/opt/samba/sbin/samba # /usr/local/samba/sbin/samba
 [Install]
 WantedBy=multi-user.target
 
+# Inicializando o bind (named) e samba
+
+systemctl start named
+systemctl start samba
+
+# verificando as portas do samba 
+netstat -putan | grep samba
 
 
+
+#### INSTALAÇÃO DO DROPBOX #### 
+
+# Baixe a versão mais recente do dropbox 
+https://www.dropbox.com/install-linux
+https://linux.dropbox.com/packages/
+
+# Baixe o pacote de instalação mais recente.
+# Extraia o tarball:
+tar xjf ./nautilus-dropbox-1.6.1.tar.bz2
+
+#Na maioria das distribuições, os comandos a seguir devem completar a tarefa:
+cd ./nautilus-dropbox-1.6.1
+./configure && make && make install
