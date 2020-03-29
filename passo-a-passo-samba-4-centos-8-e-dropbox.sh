@@ -6,6 +6,22 @@
 vim /etc/hostname
 toronto
 
+#Desativando SELINUX e Firewall.
+#Abra o arquivo /etc/sysconfig/selinux e altere de SELINUX=enforcing para #SELINUX=disabled.
+
+setenforce 0 && reboot
+
+#Verificar se realmente o SELINUX está desativado.
+sestatus
+
+#O próximo passo é desativar o iptables e o firewalld
+service firewalld stop
+service iptables stop
+service ip6tables stop
+systemctl disable firewalld
+systemctl disable iptables
+systemctl disable ip6tables
+
 ## Para salvar e sair ESC :wq
 
 # editar o /etc/hosts
@@ -116,6 +132,18 @@ systemctl start samba
 
 # verificando as portas do samba 
 netstat -putan | grep samba
+
+
+# WINBIND
+
+ln -s /opt/samba/lib/libnss_winbind.so /lib
+ln -s /lib/libnss_winbind.so /lib/libnss_winbind.so.2
+ldconfig
+
+#Para os sistemas de 64bits precisamos fazer da seguinte forma
+ln -s /opt/samba/lib/libnss_winbind.so /lib64
+ln -s /lib64/libnss_winbind.so /lib64/libnss_winbind.so.2
+ldconfig
 
 
 
