@@ -108,6 +108,11 @@ vim /etc/named.conf
 			# Arquivo com as zonas do samba
 64 include "/opt/samba/bind-dns/named.conf";
 
+#Provisionando o dominio
+/opt/samba/bin/samba-tool domain provision --domain=LABORATORIO --adminpass=dominio@samba4 \
+--dns-backend=BIND9_DLZ --server-role=dc \
+--function-level=2008_R2 --use-xattr=yes \
+--use-rfc2307 --realm=laboratorio.com.br
 
 #Criando um arquivo para inicializar o samba atráves do systemd e também automaticamente no boot do S.O
 vim /etc/systemd/system/samba.service
@@ -124,6 +129,24 @@ ExecStart=/opt/samba/sbin/samba # /usr/local/samba/sbin/samba
 
 [Install]
 WantedBy=multi-user.target
+
+# Se você estiver no Linux e usar o Appamor, precisa inserir as linhas referentes ao arquivo do bind do samba.
+# Se o arquivo não existir, crie.
+vim /etc/apparmor.d/usr.sbin.named
+
+25   # Arquivos Samba4 - Bind9
+26   /opt/samba/lib/** rm,
+27   /opt/samba/bind-dns/dns.keytab rk,
+28   /opt/samba/bind-dns/named.conf r,
+29   /opt/samba/bind-dns/dns/** rwk,
+30   /opt/samba/etc/smb.conf r,
+
+# Reinicie o apparmor
+service apparmor reload
+
+#Inicie o bind9
+service bind9 start
+
 
 # Inicializando o bind (named) e samba
 
