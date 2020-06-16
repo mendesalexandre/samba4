@@ -273,6 +273,9 @@ WantedBy=multi-user.target
 # Ativando o script para o usuario cloud
 systemctl enable dropbox@cloud.service
 
+# O usuário cloud tem um id 0, ou seja, é root, vamos desabilitar o shell dele para não poder executar nenhum script. 
+usermod -s /usr/sbin/nologin cloud
+
 # Iniciando o script
 systemctl start dropbox@cloud.service
 
