@@ -11,7 +11,8 @@ apt-get install acl attr autoconf bind9utils bison build-essential \
   python-all-dev python-crypto python-dbg python-dev python-dnspython \
   python3-dnspython python-gpg python3-gpg python-markdown python3-markdown \
   python3-dev xsltproc zlib1g-dev liblmdb-dev lmdb-utils libtasn1-bin libicu-dev \
-  libtracker-sparql-2.0-dev glib-2.0 bind9
+  libtracker-sparql-2.0-dev glib-2.0 python3-pyasn1 python3-cryptography python3-iso8601 libdbus-1-dev \
+  bind9 
 
 
 ## Alterar o nome do servidor (Altere conforme sua escolha)
