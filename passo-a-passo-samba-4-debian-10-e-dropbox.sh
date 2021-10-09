@@ -135,16 +135,14 @@ dig -t SOA laboratorio.com.br
 
 
 # WINBIND
-
-ln -s /opt/samba/lib/libnss_winbind.so /lib
-ln -s /lib/libnss_winbind.so /lib/libnss_winbind.so.2
-ldconfig
-
-#Para os sistemas de 64bits precisamos fazer da seguinte forma
-ln -s /opt/samba/lib/libnss_winbind.so /lib64
-ln -s /lib64/libnss_winbind.so /lib64/libnss_winbind.so.2
-ldconfig
-
+Listando biblioteca.
+		ls -lhsa /lib/x86_64-linux-gnu/
+	ls -l /opt/samba/lib/libnss_winbi*
+	ln -s /opt/samba/lib/libnss_winbind.so.2 /lib/x86_64-linux-gnu/
+	
+Listando biblioteca.
+	ls -l /lib/x86_64-linux-gnu/libnss_winbind.so.2
+	ln -s /lib/x86_64-linux-gnu/libnss_winbind.so.2 /lib/x86_64-linux-gnu/libnss_winbind.so
 
 
 ## Servidor NTP
